@@ -77,6 +77,7 @@ class Translations_For_Algolia_With_Prisna {
 		require_once 'inc/prisna-utils.php';
 		add_filter( 'algolia_indices', [ $this, 'indices' ] );
 		add_filter( 'aw_search_index_name', [ $this, 'search_index_name' ] );
+		add_filter( 'aw_product_taxonomies', [ $this, 'taxonomies' ] );
 		add_action( 'algolia_wc_reindex_button', [ $this, 'reindex_buttons' ] );
 	}
 
@@ -114,12 +115,29 @@ class Translations_For_Algolia_With_Prisna {
 	}
 
 	/**
+	 * Set's index according to current active index
+	 * @param string $index
+	 * @return string
+	 * @filter aw_search_index_name
+	 */
+	public function taxonomies( $taxonomies ) {
+		$current_language = Translations_For_AW_With_Prisna_Utils::current_language();
+		if ( $current_language && $current_language !== PrisnaWPTranslateConfig::getSettingValue( 'from' ) ) {
+			$taxonomies['name'] = Translations_For_AW_With_Prisna_Utils::translate(
+				$taxonomies['name'],
+				PrisnaWPTranslateConfig::getSettingValue( 'from' ),
+				$current_language
+			);
+		}
+		return $taxonomies;
+	}
+
+	/**
 	 * Adds language re-index buttons
 	 * @action algolia_wc_reindex_button
 	 */
 	public function reindex_buttons() {
 		$languages = PrisnaWPTranslateConfig::getSettingValue( 'languages' );
-
 		foreach ( $languages as $language ) {
 			?>
 			<button class="algolia-reindex-button button button-primary" data-index="posts_product_<?php echo $language ?>">
